@@ -54,6 +54,19 @@ method = input("Enter distribution method (mono or multi please): ")
 (x, varName, inFileRow) = fmf.featureArrayFromCsv("data.csv")
 
 
+#def function qui iront dans multiKmeans
+
+# pool.map prend en argument une fonction et une liste. Les éléments de la liste
+# sont callable par la fonction. pool est un objet constitué de plusieurs processus.
+# map est une procédure callable sur les objets de ce type. Dans chaque processus de pool, 
+# map met en mémoire la fonction, et un certain nombre déléments de la liste. Chaque 
+# élémment soit réparti vers l'un des processus, sans répétition et sans oubli. Dans
+# chaque processus, map demande l'appel de la fonction sur chaque élément qui s'y trouve.
+# La sortie est la liste des réponses de la fonction à chaque élément. Si la fonction
+# renvoit un dictionnaire, la sortie est une liste de dictionnaire. La liste de sortie
+# est de la même taille que la liste d'entrée.
+
+
 #####
 # clustering mono thread
 #####
