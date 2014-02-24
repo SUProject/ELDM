@@ -8,12 +8,14 @@
 #####
 # packages import
 #####
+
 # common
 import os
 import multiprocessing as mltp
 import numpy as np
+
 # perso
-import monoKMeans.function as monokmf
+import KMeans.monoKMeans.function as monokmf
 
 #####
 # Modulus part for import in the main
@@ -34,7 +36,17 @@ def chunk(x, m):
                         res.append(x[(i*quo):((i+1)*quo + mod),:])
         return(res)
 
-
+def listToMap(myChunk, myCenters):
+        """
+        Takes the list of chunks + list of centers
+        Returns a list. Each element a piece of the chunk + centers.
+        """
+        res = []
+        for chunk in myChunk:
+                res.append([chunk, myCenters])
+        return(res)
+    
+    
 def newCenterMap(xMap, vecAllocMap, k):
         """
         Works on a CHUNKED input -> needs to be encapsuled in ourMap(L)
@@ -73,45 +85,39 @@ def ourMap(listChunk):
         The (real global) centers are supposed to be known.
         """
         res = []
-        global center
-        
-        for xMap in listChunk:
+        center = listChunk[1]
+        xMap = listChunk[0]
+        ### Computation of the distances between points and centers
+        matDistMap = monokmf.allDistance(xMap, center)
+        ### Computation of the local allocation
+        vecAllocMap = monokmf.alloc(matDistMap)
+        ### Computation of local centers and populations
+        (centerMap, nbMap) = newCenterMap(xMap, vecAllocMap, len(center))
 
-                ### Computation of the distances between points and centers
-                matDistMap = monokmf.allDistance(xMap, center)
-                ### Computation of the local allocation
-                vecAllocMap = monokmf.alloc(matDistMap)
-                ### Computation of local centers and populations
-                (centerMap, nbMap) = newCenterMap(xMap, vecAllocMap, k)
-
-                res.append((centerMap, nbMap))
-
+        res.append((centerMap, nbMap))
         return(res)
-
+    
 def ourReduce(listMapped):
         """
         Function that computes the new real global centers
         according to the result of ourMap().
         """
         # initialization on the first local center, for the shape
-        (k, p) = listMapped[0][0].shape
-        
+        (p, k) = np.array(listMapped[0][0]).shape
         center = np.zeros((k,p))
         m = len(listMapped)
         
-        # global center
         for ic in range(0, k):
                 nbPoint = 0
                 # number of points around center k
                 for il in range(0, m):
-                        nbPoint = nbPoint + listMapped[il][1][ic]
+                        nbPoint = nbPoint + listMapped[il][0][1][ic]
                 # weighted average
                 for il in range(0, m):
                         center[ic,:] = center[ic,:] + \
-                                 1/nbPoint * listMapped[il][1][ic] * listMapped[il][0][ic]
+                                 1/nbPoint * listMapped[il][0][1][ic] * listMapped[il][0][0][ic]
 
         return(center)
-
 
 
 #####

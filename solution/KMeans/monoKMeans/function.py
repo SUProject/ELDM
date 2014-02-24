@@ -16,6 +16,7 @@ import random as rd
 #####
 # Modulus part for import in the main
 #####
+
 def initialize(x, k):
         """
         Creates an array of centers
