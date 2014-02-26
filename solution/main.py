@@ -53,17 +53,21 @@ if __name__ == "__main__":
 
         center = monokmf.initialize(x, k)
         hasConverged = False
-
+        i=0
+        
         while not hasConverged:
+            i += 1
             centerOld = center
             matDist = monokmf.allDistance(x, center)
             vecAlloc = monokmf.alloc(matDist)
             center = monokmf.newCenter(x, vecAlloc, k)
             hasConverged = (center == centerOld).all()
-
-        timeElapsed = open("timeElapsed" + method + ".txt", "w")
-        timeElapsed.write(str(time.time()-start))
+        
+        # writing the time
+        timeElapsed = open("time/timeElapsed" + method + str(k) + "clusters.txt", "w")
+        timeElapsed.write(str(time.time()-start) + "\n" + str(i))
         timeElapsed.close()
+        # System break
         os.system("pause")
     
     #####
@@ -73,71 +77,40 @@ if __name__ == "__main__":
         start = time.time()
 
         # count number of cpu
-        #m = mltp.cpu_count()
-        m=4
-        # launch as much workers than cpu
+        m = mltp.cpu_count()
+        # launch as many workers as # cpu
         pool = mltp.Pool(processes=m)
-        # Partitionne les données une fois multikmf.
+        # Partitioning the data
         chunkedX = multikmf.chunk(x, m)
-        # Initialiser les centres globaux
+        # Initialize the centers
         center = monokmf.initialize(x, k)
-        #print(len(center))
-        # Créer la liste pour pool.map
         
+        i = 0     
         hasConverged = False
         while not hasConverged:
+            i += 1
             centerOld = center
+            # Creation of the list for pool.map
             xMapList = multikmf.listToMap(chunkedX, centerOld)
-        
-        # pool.map prend en argument une fonction et une liste
-        # Role ourMap, associer un centre à chaque point: centre le plus proche du point
-        # La liste est de longueur égale au nombre de process et contient les différentes
-        # parties des données de départ. Chaque élément de la liste inclut les centres actuels.
-        # Elle renvoit une liste avec chaque point, et le centre dont il est le plus proche
+            # Mapping of the chunks
             xMapListProcessed = pool.map(multikmf.ourMap, xMapList)
-        # La fonction ourReduce prend en argument la liste de réponses, constituées
-        # pour chaque élément: des centres locaux dans le chunk, et leur nombre de 
-        # points associés.
-        # Si on voulait reparalléliser, on pourrait créer un dico dont les clefs
-        # sont les centres, et les valeurs, les points associés, sans se soucier
-        # du nombre de points associées, puisqu'il serait inclus dans l'information
-        # "points associés".
-        # Dans tous les cas elle renvoit les nouveaux centres.
+            # weighted average of the centers among the chunks
             center = multikmf.ourReduce(xMapListProcessed)
-            print(center)
             hasConverged = (center == centerOld).all()
         
+        # Final allocation vector
         matDist = monokmf.allDistance(x, center)
         vecAlloc = monokmf.alloc(matDist)
         
-        timeElapsed = open("timeElapsed" + method + "with" + str(m) + "processes.txt", "w")
+        timeElapsed = open("time/timeElapsed" + method + str(k) + "cluster" + str(m) + "process.txt", "w")
         timeElapsed.write(str(time.time()-start))
         timeElapsed.close()
-    
-
-### Analytiquement, on peut différencier le temps de mise 
-    ### en place du threading, et le temps de calcul dans le
-    ### threading
-    ### Time1Thread: Tester le temps avec un thread mais 
-    ### en passant par pool.map
-    ### TimeSeq = Le comparer au temps sequentiel
-    ### TimeStruct = Time1Thread - TimeSeq évalue le temps
-    ### imposer par la mise en place de la structure de thread
-    ### Time4Thread Tester le temps avec 4 thread
-    ### Hypothèse: 4 Thread plus rapide que 1 Thread ?
-    ### Time4Thread < Time1Thread ?
-    ### Hypothèse: 4 Thread plus rapide que TimeSeq ?
-    ### Time4Thread < TimeSeq ?
-    ### prise en compte de timestruct si on se rend compte que
-    ### finalement Time4Thread > TimeSeq
-    ### Time4Thread - TimeStruct < Seq ?
-    ### Evaluer si timestruct est le même pour 1 ou 4 thread 
-    ### ou si 4 fois plus, ou autre
-
-    
+        
+        # No system break, to get relevant measure of time elapsed.
+        
     else:
         print("Error: Wrong method type provided.")
-        # Pause of the system
+        # System break
         os.system("pause")
 
 #####
@@ -145,7 +118,7 @@ if __name__ == "__main__":
 #####
 # writing the result with a new column
     xAugmented = np.hstack((x, vecAlloc)) # argument is a real tuple => (,) inside the ().
-    fmf.csvFromFeatureArrayAndClust("data_clustered_" + method + str(k) + ".csv",\
+    fmf.csvFromFeatureArrayAndClust("output/data_clustered_" + method + str(k) + ".csv",\
                                 varName,\
                                 xAugmented)
 

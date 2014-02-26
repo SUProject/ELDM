@@ -78,11 +78,9 @@ def newCenterMap(xMap, vecAllocMap, k):
 
 def ourMap(listChunk):
         """
-        Function that maps what we want to all the
-        elements of a list. The list is typically
-        the list of chunks of our input data.
-
-        The (real global) centers are supposed to be known.
+        Takes a chunk + centers
+        Returns new local centers for the chunks 
+        + number of points allocated to this center
         """
         res = []
         center = listChunk[1]
